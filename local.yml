@@ -6,6 +6,7 @@ volumes:
 
 services:
   django:
+    &django
     build:
       context: .
       dockerfile: ./compose/local/django/Dockerfile
@@ -34,18 +35,46 @@ services:
     env_file:
       - ./.envs/.local/.postgres
 
-  docs:
-    image: testproject_1_local_docs
-    container_name: testproject_1_local_docs
-    build:
-      context: .
-      dockerfile: ./compose/local/docs/Dockerfile
-    env_file:
-      - ./.envs/.local/.django
-    volumes:
-      - ./docs:/docs:z
-      - ./config:/app/config:z
-      - ./testproject_1:/app/testproject_1:z
+  redis:
+    image: redis:5.0
+
+  celery:
+    <<: *django
+    container_name: celeryworker
     ports:
-      - "9000:9000"
-    command: /start-docs
+      - "49483:49483"
+    command: /start-celeryworker
+    depends_on:
+      - redis
+
+  celerybeat:
+    <<: *django
+    container_name: celerybeat
+    ports:
+      - "49484:49484"
+    command: /start-celerybeat
+
+  flower:
+    <<: *django
+    container_name: celeryflower
+    ports:
+      - "49485:49485"
+    command: /start-flower
+    depends_on:
+      - redis
+
+  # docs:
+  #   image: testproject_1_local_docs
+  #   container_name: testproject_1_local_docs
+  #   build:
+  #     context: .
+  #     dockerfile: ./compose/local/docs/Dockerfile
+  #   env_file:
+  #     - ./.envs/.local/.django
+  #   volumes:
+  #     - ./docs:/docs:z
+  #     - ./config:/app/config:z
+  #     - ./testproject_1:/app/testproject_1:z
+  #   ports:
+  #     - "9000:9000"
+  #   command: /start-docs

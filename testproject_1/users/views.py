@@ -5,6 +5,8 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import DetailView, RedirectView, UpdateView
 
+from testproject_1.users.tasks import initial
+
 User = get_user_model()
 
 
@@ -14,6 +16,9 @@ class UserDetailView(LoginRequiredMixin, DetailView):
     slug_field = "username"
     slug_url_kwarg = "username"
 
+    def get_context_data(self, **kwargs):
+        initial.delay()
+        return super().get_context_data(**kwargs)
 
 user_detail_view = UserDetailView.as_view()
 
